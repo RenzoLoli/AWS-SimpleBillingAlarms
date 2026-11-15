@@ -1,14 +1,15 @@
 # AWS Billing Alarms with Terraform
 
-Infrastructure as Code project that provisions AWS Billing Alarms using Terraform, CloudWatch and SNS to monitor estimated AWS expenses and send email notifications when predefined spending thresholds are reached.
+Infrastructure as Code project that provisions AWS Billing Alarms using Terraform, Amazon CloudWatch and Amazon SNS to monitor estimated AWS expenses and send email notifications when predefined spending thresholds are reached.
 
 ## Architecture
 
-The infrastructure uses **Amazon CloudWatch** to monitor AWS billing metrics and **Amazon SNS** to deliver notifications via email.
+The infrastructure uses **Amazon CloudWatch** to monitor AWS billing metrics and **Amazon SNS** to deliver notifications through an email subscription.
 
 ```mermaid
 flowchart TD
     A[AWS Billing] -->|EstimatedCharges| B[Amazon CloudWatch]
+
     B --> C1[Billing Alarm - $5]
     B --> C2[Billing Alarm - $25]
     B --> C3[Billing Alarm - $100]
@@ -24,10 +25,11 @@ flowchart TD
 ## Features
 
 - **Three billing thresholds:** $5, $25 and $100 USD.
-- **CloudWatch Metric Alarms:** monitor the `EstimatedCharges` metric.
-- **SNS Notifications:** deliver email notifications when an alarm enters the `ALARM` state.
-- **Terraform:** infrastructure provisioned and managed declaratively.
-- **Reusable SNS Topic:** all three alarms share the same notification channel.
+- **CloudWatch Metric Alarms:** Monitor the `EstimatedCharges` metric.
+- **SNS Notifications:** Send email notifications when an alarm enters the `ALARM` state.
+- **Terraform:** Infrastructure provisioned and managed declaratively.
+- **Reusable SNS Topic:** All three alarms share the same notification channel.
+- **Configurable Email:** The notification endpoint is supplied through a Terraform variable instead of being hardcoded in the infrastructure configuration.
 
 ## Infrastructure Components
 
@@ -41,9 +43,9 @@ flowchart TD
 
 | Alarm | Threshold | Metric |
 |---|---:|---|
-| Billing Alarm 1 | $5 USD | EstimatedCharges |
-| Billing Alarm 2 | $25 USD | EstimatedCharges |
-| Billing Alarm 3 | $100 USD | EstimatedCharges |
+| Billing Alarm 1 | $5 USD | `EstimatedCharges` |
+| Billing Alarm 2 | $25 USD | `EstimatedCharges` |
+| Billing Alarm 3 | $100 USD | `EstimatedCharges` |
 
 ## CloudWatch Configuration
 
@@ -81,14 +83,16 @@ For example, if AWS reports estimated charges of $26:
 ├── .terraform.lock.hcl
 ├── main.tf
 ├── output.tf
-└── provider.tf
+├── provider.tf
+└── variables.tf
 ```
 
 | File | Responsibility |
 |---|---|
-| `main.tf` | Defines SNS resources and CloudWatch billing alarms. |
-| `output.tf` | Exposes SNS and CloudWatch resource ARNs. |
+| `main.tf` | Defines the SNS resources and CloudWatch billing alarms. |
+| `output.tf` | Exposes SNS and CloudWatch resource information. |
 | `provider.tf` | Configures the AWS provider and required version. |
+| `variables.tf` | Declares configurable Terraform input variables. |
 | `.terraform.lock.hcl` | Locks provider dependencies. |
 | `.gitignore` | Excludes Terraform state and local configuration files. |
 
@@ -99,9 +103,19 @@ For example, if AWS reports estimated charges of $26:
 - AWS credentials configured.
 - An AWS account with permissions to manage CloudWatch, SNS and billing preferences.
 
-## Deployment
+## Configuration
 
-### 1. Initialize Terraform
+The notification email is managed through a Terraform input variable.
+
+### 1. Create a `terraform.tfvars` file
+
+```hcl
+billing_notification_email = "your-email@example.com"
+```
+
+This file is automatically excluded from version control through `.gitignore`, preventing personal configuration from being committed accidentally.
+
+### 2. Initialize Terraform
 
 Downloads the required provider dependencies.
 
@@ -109,7 +123,7 @@ Downloads the required provider dependencies.
 terraform init
 ```
 
-### 2. Validate the configuration
+### 3. Validate the configuration
 
 Checks Terraform configuration syntax and consistency.
 
@@ -117,7 +131,7 @@ Checks Terraform configuration syntax and consistency.
 terraform validate
 ```
 
-### 3. Review the execution plan
+### 4. Review the execution plan
 
 Displays the infrastructure changes Terraform intends to apply.
 
@@ -125,7 +139,7 @@ Displays the infrastructure changes Terraform intends to apply.
 terraform plan
 ```
 
-### 4. Deploy the infrastructure
+### 5. Deploy the infrastructure
 
 Creates the SNS topic, email subscription and three CloudWatch alarms.
 
@@ -146,6 +160,8 @@ Before using billing alarms in a real AWS account:
 5. Confirm the SNS email subscription using the confirmation message sent to the configured email address.
 
 Without enabling CloudWatch Billing Alerts, the `AWS/Billing` metrics might not be available.
+
+**Note:** Terraform can create the email subscription, but the recipient must confirm it through the SNS confirmation email before notifications can be delivered.
 
 ## Testing and Verification
 
@@ -201,7 +217,7 @@ This tests the alarm state transition. Actual execution of alarm actions depends
 After deployment, Terraform exposes:
 
 - `topic_arn`: SNS notification topic ARN.
-- `topic_subscription_email`: configured notification email.
+- `topic_subscription_email`: Configured notification email.
 - `alert_5dollars_arn`: ARN of the $5 billing alarm.
 - `alert_25dollars_arn`: ARN of the $25 billing alarm.
 - `alert_100dollars_arn`: ARN of the $100 billing alarm.
