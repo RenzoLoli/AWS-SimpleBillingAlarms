@@ -11,7 +11,7 @@ resource "aws_sns_topic" "billing-alert-notification" {
 resource "aws_sns_topic_subscription" "billing-alert-notification-to-admin" {
   topic_arn = aws_sns_topic.billing-alert-notification.arn
   protocol  = "email"
-  endpoint  = "test@example.com"
+  endpoint  = var.billing_notification_email
 }
 
 ###########################33333
